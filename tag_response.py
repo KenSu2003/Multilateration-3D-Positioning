@@ -1,5 +1,6 @@
 import bpy
 import math
+import csv
 
 # Function to calculate the Euclidean distance
 def calculate_distance(point1, point2):
@@ -9,19 +10,26 @@ def calculate_distance(point1, point2):
         (point2[2] - point1[2]) ** 2
     )
 
+# Get locations
 sphere = bpy.data.objects["Sphere"].location
 cubeA = bpy.data.objects["Cube"].location
 cubeB = bpy.data.objects["Cube.001"].location
 cubeC = bpy.data.objects["Cube.002"].location
 
-print(f"Sphere Location: {sphere} \n CubeA Location: {cubeA} \n CubeB Location: {cubeB} \n CubeC Location: {cubeC}")
-
-AB = calculate_distance(cubeA,cubeB)
-AC = calculate_distance(cubeA,cubeC)
-BC = calculate_distance(cubeB,cubeC)
-# print(f"AB = {AB}")
-
+# Calculate distances
 HA = calculate_distance(sphere, cubeA)
 HB = calculate_distance(sphere, cubeB)
 HC = calculate_distance(sphere, cubeC)
-# print(f"HA = {HA}, HB = {HB}, HC = {HC}")
+
+# Save to file
+output_file = "/Users/kensu/Desktop/SDP/three_d_locating/tag_data.csv"
+
+with open(output_file, "w", newline="") as file:
+    writer = csv.writer(file)
+    writer.writerow(["Point", "X", "Y", "Z", "Distance to Sphere"])
+    writer.writerow(["CubeA", cubeA[0], cubeA[1], cubeA[2], HA])
+    writer.writerow(["CubeB", cubeB[0], cubeB[1], cubeB[2], HB])
+    writer.writerow(["CubeC", cubeC[0], cubeC[1], cubeC[2], HC])
+    writer.writerow(["Sphere", sphere[0], sphere[1], sphere[2], ""])
+
+print(f"Data written to {output_file}")

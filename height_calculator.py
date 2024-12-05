@@ -1,24 +1,32 @@
+import csv
 from sympy import Point, Matrix, sqrt
 from math import sqrt as numeric_sqrt
-# import tag_response as tag
-# from tag_response import HA, HB, HC, cubeA, cubeB, cubeC, sphere
 
 O = Point(0, 0)
 
-# A, B, C = tag.cubeA, tag.cubeB, tag.cubeC
-# HA, HB, HC = tag.HA, tag.HB, tag.HC
+# ———————————————————————— Get Data from Blender ————————————————————————
 
-A = Point(10.0000, 1.0000, 0)
-B = Point(1.0000, 10.0000, 0)
-C = Point(1.0000, 1.0000, 0)
+# Read data from CSV
+data_file = "/Users/kensu/Desktop/SDP/three_d_locating/tag_data.csv"
+points = {}
 
-HA = 8.433780570691637
-HB = 7.589317959056357
-HC = 7.633360750059722
+with open(data_file, "r") as file:
+    reader = csv.DictReader(file)
+    for row in reader:
+        if row["Point"] != "Sphere":
+            points[row["Point"]] = {
+                "location": Point(float(row["X"]), float(row["Y"]), float(row["Z"])),
+                "distance": float(row["Distance to Sphere"])
+            }
+        else:
+            sphere = Point(float(row["X"]), float(row["Y"]), float(row["Z"]))
+
+# Set Data
+A, B, C = points["CubeA"]["location"], points["CubeB"]["location"], points["CubeC"]["location"]
+HA, HB, HC = points["CubeA"]["distance"], points["CubeB"]["distance"], points["CubeC"]["distance"]
 
 
-
-# ———————————————————————— DO NOT EDIT CODE BELOW ————————————————————————
+# ———————————————————————— Height Calculation ————————————————————————
 
 AB = A.distance(B)
 AC = A.distance(C)
@@ -55,4 +63,5 @@ print("Volume of tetrahedron (V_HABC):", V_HABC)
 print("Height (HT):", HT)
 
 
-# Check
+# ———————————————————————— Check Height ————————————————————————
+print(f"Check = {sphere.z - HT}")
