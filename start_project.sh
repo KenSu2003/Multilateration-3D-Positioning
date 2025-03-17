@@ -1,10 +1,11 @@
 #!/bin/bash
 
-# Start Blender
-cd /Applications/Blender.app/Contents/MacOS
+# Get the directory of the script
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# SCRIPT_DIR = /Users/kensu/Desktop/SDP/Trilateration-3D-Positioning
 
-# Run Blender Script
-./blender /Users/kensu/Desktop/SDP/three_d_locating/threeD_positioning.blend --background --python /Users/kensu/Desktop/SDP/three_d_locating/tag_response.py 
+# Start Blender in background mode and run the Python script
+/Applications/Blender.app/Contents/MacOS/blender "$SCRIPT_DIR/threeD_positioning.blend" --background --python "$SCRIPT_DIR/tag_response.py"
 
-# Run the Python Script
-python /Users/kensu/Desktop/SDP/three_d_locating/height_calculator.py
+# Run the Python script
+python "$SCRIPT_DIR/height_calculator.py"

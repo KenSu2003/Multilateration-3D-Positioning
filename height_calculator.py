@@ -1,5 +1,5 @@
 import csv
-from sympy import Point, Matrix, sqrt
+from sympy import Point, Matrix, sqrt, Point3D, Plane
 from math import sqrt as numeric_sqrt
 
 O = Point(0, 0)
@@ -7,7 +7,7 @@ O = Point(0, 0)
 # ———————————————————————— Get Data from Blender ————————————————————————
 
 # Read data from CSV
-data_file = "/Users/kensu/Desktop/SDP/three_d_locating/tag_data.csv"
+data_file = "tag_data.csv"
 points = {}
 
 with open(data_file, "r") as file:
@@ -25,6 +25,13 @@ with open(data_file, "r") as file:
 A, B, C = points["CubeA"]["location"], points["CubeB"]["location"], points["CubeC"]["location"]
 HA, HB, HC = points["CubeA"]["distance"], points["CubeB"]["distance"], points["CubeC"]["distance"]
 
+# Define the three base station points as 3D points
+A3D = Point3D(A.x, A.y, A.z)
+B3D = Point3D(B.x, B.y, B.z)
+C3D = Point3D(C.x, C.y, C.z)
+
+# Create a plane using the three base stations
+base_plane = Plane(A3D, B3D, C3D)
 
 # ———————————————————————— Height Calculation ————————————————————————
 
@@ -65,3 +72,14 @@ print("Height (HT):", HT)
 
 # ———————————————————————— Check Height ————————————————————————
 print(f"Check = {sphere.z - HT}")
+
+# Find signed distance from sphere to plane
+signed_distance = base_plane.distance(sphere) 
+
+# If the sphere is above, signed_distance will be positive; if below, it will be negative
+if signed_distance > 0:
+    print(f"The tag is ABOVE the base station plane by {signed_distance:.3f} units.")
+elif signed_distance < 0:
+    print(f"The tag is BELOW the base station plane by {abs(signed_distance):.3f} units.")
+else:
+    print("The tag is ON the same plane as the base stations.")

@@ -22,7 +22,7 @@ HB = calculate_distance(sphere, cubeB)
 HC = calculate_distance(sphere, cubeC)
 
 # Save to file
-output_file = "/Users/kensu/Desktop/SDP/three_d_locating/tag_data.csv"
+output_file = "/Users/kensu/Desktop/SDP/Trilateration-3D-Positioning/tag_data.csv"
 
 with open(output_file, "w", newline="") as file:
     writer = csv.writer(file)
