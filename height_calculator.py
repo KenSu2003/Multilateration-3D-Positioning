@@ -72,14 +72,3 @@ print("Height (HT):", HT)
 
 # ———————————————————————— Check Height ————————————————————————
 print(f"Check = {sphere.z - HT}")
-
-# Find signed distance from sphere to plane
-signed_distance = base_plane.distance(sphere) 
-
-# If the sphere is above, signed_distance will be positive; if below, it will be negative
-if signed_distance > 0:
-    print(f"The tag is ABOVE the base station plane by {signed_distance:.3f} units.")
-elif signed_distance < 0:
-    print(f"The tag is BELOW the base station plane by {abs(signed_distance):.3f} units.")
-else:
-    print("The tag is ON the same plane as the base stations.")
