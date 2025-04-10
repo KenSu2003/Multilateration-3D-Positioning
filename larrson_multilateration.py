@@ -22,57 +22,10 @@ distances = np.array(distances)
 def trilateration_closed_form(anchors, distances):
     '''
     Larsson 2022 — 4.3 + 4.7: Linear Trilateration with Double Compaction Matrix (M)
-
-    # Key variables:
-    - t      = unknown tag position
-    - a_i    = anchor i coordinates (position)
-        => a_i = (x_i, y_i, z_i)
-    - d_i    = measured Euclidean distance from anchor i to the unknown tag position t
-        => d_i = |t - a_i|
-    
-    1. D = dij^2      # Full squared distance matrix (m x n), dij^2 = ||r_i - s_j||^2
-    D = [
-        [d11^2, d12^2, ..., d1n^2],
-        [d21^2, d22^2, ..., d2n^2],
-        ...
-        [dm1^2, dm2^2, ..., dmn^2]
-    ]
-
-    2. M = dij^2 - di1^2     # Double compaction matrix (Larsson Eq. 4.7)
-    # Each row i is subtracted by its first column entry (anchor 1)
-
-    M = [
-        [d11^2 - d11^2, d12^2 - d11^2, ..., d1n^2 - d11^2],
-        [d21^2 - d21^2, d22^2 - d21^2, ..., d2n^2 - d21^2],
-        ...
-        [dm1^2 - dm1^2, dm2^2 - dm1^2, ..., dmn^2 - dm1^2]
-    ]
-
-    M = -2 * (R - r1·1^T)^T (S - s1·1^T)     # From Larsson (4.7)
-    # R = receiver coordinates (ri), S = sender coordinates (sj)
-
-    3. A = ai - a1     # Matrix of anchor offsets (local coordinate differences)
-
-    A = [
-        [x2 - x1, y2 - y1, z2 - z1],
-        [x3 - x1, y3 - y1, z3 - z1],
-        [x4 - x1, y4 - y1, z4 - z1]
-    ]
-
-    # Shape: (3 x 3), if you use 4 anchors in 3D
-
-    4. b = 0.5 * (d1^2 - di^2 + ||ai - a1||^2)      # Vector of scalar terms for each anchor
-    b = [
-        0.5 * (d1^2 - d2^2 + ||a2 - a1||^2),
-        0.5 * (d1^2 - d3^2 + ||a3 - a1||^2),
-        0.5 * (d1^2 - d4^2 + ||a4 - a1||^2)
-    ]
-
-    # b is derived from M, but scaled and used only when solving A x = b
-
-    5. A x = b       # Final linear system to solve for tag position (relative to anchor 1)
     '''
 
+    if len(anchors) != 4:
+        raise ValueError("This closed-form solver requires exactly 4 anchors!")
 
     assert anchors.shape == (4, 3), # This solver needs exactly 4 anchors in 3D
     assert distances.shape == (4,), # Need 4 distances
@@ -150,9 +103,9 @@ def trilateration_minimum_squared(anchors, distances):
 
 
 # --- Solve position ---
-if len(anchors) != 4:
-    raise ValueError("This closed-form solver requires exactly 4 anchors!")
 
+
+# estimated_position = trilateration_minimum_squared(anchors, distances)
 estimated_position = trilateration_minimum_squared(anchors, distances)
 print("Estimated Coordinates of Sphere:", estimated_position)
 
@@ -160,32 +113,3 @@ if sphere_actual:
     error = np.linalg.norm(np.array(sphere_actual) - estimated_position)
     print("Actual Coordinates of Sphere:", sphere_actual)
     print("Estimation Error:", error)
-
-
-
-
-
-
-'''
-    X = Anchors
-
-    Dij^2 = |Xi-Xj|^2
-    D_squared = [
-        [0      , d12^2 , d13^2 , ... , d1n^2],
-        [d21^2  , 0     , d23^2 , ... , d2n^2],
-        [d31^2  , d32^2 , 0     , ... , d3n^2],
-        ...
-        [dn1^2  , dn2^2 , dn3^2 , ... , 0    ]
-    ]
-
-    B = -(1/2)*J*D^2*J          # Coordinates from Distances
-    J = I-(1/N)*[1s][1s]^T      # 
-
-    # Note d11^2-d11^2 = 0 - 0 = 0 = d11^2
-    M = [d11^2       , d12^2-d11^2 , d13^2-d11^2 , ... , d1n^2-d11^2]
-        [d21^2-d11^2 , d22^2-d11^2 , d23^2-d11^2 , ... , d2n^2-d11^2]
-        [d31^2-d11^2 , d32^2-d11^2 , d33^2-d11^2 , ... , d3n^2-d11^2]
-        [d41^2-d11^2 , d42^2-d11^2 , d43^2-d11^2 , ... , d4n^2-d11^2]
-        ...
-        [dm1^2-d11^2 , dm2^2-d11^2 , dm3^2-d11^2 , ... , dmn^2-d11^2]
-    '''
