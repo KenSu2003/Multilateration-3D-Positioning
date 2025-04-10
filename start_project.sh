@@ -9,4 +9,4 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 # Run the Python script
 # python "$SCRIPT_DIR/height_calculator.py"
-python "$SCRIPT_DIR/larrson_multilateration.py"
+python "$SCRIPT_DIR/multilateration.py"

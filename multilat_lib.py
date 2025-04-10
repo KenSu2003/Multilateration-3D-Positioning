@@ -1,4 +1,5 @@
 from scipy.optimize import minimize
+import numpy as np
 
 def brute_force(anchors, distances):
 
