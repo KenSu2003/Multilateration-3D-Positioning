@@ -19,38 +19,38 @@ anchors = np.array(anchors)
 distances = np.array(distances)
 
 
-def trilateration_closed_form(anchors, distances):
-    '''
-    Larsson 2022 — 4.3 + 4.7: Linear Trilateration with Double Compaction Matrix (M)
-    '''
+# def trilateration_closed_form(anchors, distances):
+#     '''
+#     Larsson 2022 — 4.3 + 4.7: Linear Trilateration with Double Compaction Matrix (M)
+#     '''
 
-    if len(anchors) != 4:
-        raise ValueError("This closed-form solver requires exactly 4 anchors!")
+#     if len(anchors) != 4:
+#         raise ValueError("This closed-form solver requires exactly 4 anchors!")
 
-    assert anchors.shape == (4, 3), # This solver needs exactly 4 anchors in 3D
-    assert distances.shape == (4,), # Need 4 distances
+#     assert anchors.shape == (4, 3), # This solver needs exactly 4 anchors in 3D
+#     assert distances.shape == (4,), # Need 4 distances
 
-    # Shift an achor as the origin to be the reference point
-    origin = anchors[0]                 # pick 1st anchor as origin (reference point)
-    distances = distances**2            # work with squared distances
+#     # Shift an achor as the origin to be the reference point
+#     origin = anchors[0]                 # pick 1st anchor as origin (reference point)
+#     distances = distances**2            # work with squared distances
 
-    # Shift the anchors to the origin, and calculate the distance matrix
-    Anchor_offset = anchors - origin   
+#     # Shift the anchors to the origin, and calculate the distance matrix
+#     Anchor_offset = anchors - origin   
 
-    # Find the Matrix of anchor offsets (local coordinate differences)
-    A = Anchor_offset[1:]                           # anchors 2-4
+#     # Find the Matrix of anchor offsets (local coordinate differences)
+#     A = Anchor_offset[1:]                           # anchors 2-4
 
-    # 
-    b = 0.5 * (
-        distances[0]                            # anchor 1 (origin) squared distance
-        - distances[1:]                         # anchors 2-4 squared distances
-        + np.sum(D[1:]**2, axis=1) # anchors 2-4 squared distances
-    )
+#     # 
+#     b = 0.5 * (
+#         distances[0]                            # anchor 1 (origin) squared distance
+#         - distances[1:]                         # anchors 2-4 squared distances
+#         + np.sum(D[1:]**2, axis=1) # anchors 2-4 squared distances
+#     )
 
-    # Solve and shift back
-    estimated_shifted = np.linalg.solve(A, b)   # Solve the Linear System
-    estimated = estimated_shifted + origin      # Shift back to global coordinates (x,y,z)
-    return estimated
+#     # Solve and shift back
+#     estimated_shifted = np.linalg.solve(A, b)   # Solve the Linear System
+#     estimated = estimated_shifted + origin      # Shift back to global coordinates (x,y,z)
+#     return estimated
 
 
 

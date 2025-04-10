@@ -19,20 +19,23 @@ with open("tag_data.csv", "r") as file:
 anchors = np.array(anchors)
 distances = np.array(distances)
 
-# Objective function: minimize squared difference between measured and calculated distances
-def objective(q):
-    return np.sum((np.linalg.norm(anchors - q, axis=1) - distances) ** 2)
+def brute_force(anchors, distances):
 
-# Initial guess: average of anchor positions
-initial_guess = np.mean(anchors, axis=0)
+    # Objective function: minimize squared difference between measured and calculated distances
+    def objective(q):
+        return np.sum((np.linalg.norm(anchors - q, axis=1) - distances) ** 2)
 
-# Optimization
-res = minimize(objective, initial_guess)
+    # Initial guess: average of anchor positions
+    initial_guess = np.mean(anchors, axis=0)
 
-# Output
-estimated_position = res.x
-print("Estimated Coordinates of Sphere:", estimated_position)
+    # Optimization
+    res = minimize(objective, initial_guess)
 
+    # Output
+    estimated_position = res.x
+    print("Estimated Coordinates of Sphere:", estimated_position)
+
+estimated_position = brute_force(anchors, distances)
 if sphere_actual:
     error = np.linalg.norm(np.array(sphere_actual) - estimated_position)
     print("Actual Coordinates of Sphere:", sphere_actual)
