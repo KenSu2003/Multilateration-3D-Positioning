@@ -1,3 +1,22 @@
+def brute_force(anchors, distances):
+
+    # Objective function: minimize squared difference between measured and calculated distances
+    def objective(q):
+        return np.sum((np.linalg.norm(anchors - q, axis=1) - distances) ** 2)
+
+    # Initial guess: average of anchor positions
+    initial_guess = np.mean(anchors, axis=0)
+
+    # Optimization
+    res = minimize(objective, initial_guess)
+
+    # Output
+    estimated_position = res.x
+    print("Estimated Coordinates of Sphere:", estimated_position)
+
+    return estimated_position
+
+
 def multilateration_minimum_squared(anchors, distances):
     '''
     Larsson 2022 — Linear Trilateration with 4+ Anchors (Least Squares Form)

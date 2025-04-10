@@ -1,6 +1,7 @@
 import csv
 import numpy as np
 from scipy.optimize import minimize
+import multilat_lib.py
 
 # Load anchor positions and distances
 anchors = []
@@ -19,21 +20,7 @@ with open("tag_data.csv", "r") as file:
 anchors = np.array(anchors)
 distances = np.array(distances)
 
-def brute_force(anchors, distances):
 
-    # Objective function: minimize squared difference between measured and calculated distances
-    def objective(q):
-        return np.sum((np.linalg.norm(anchors - q, axis=1) - distances) ** 2)
-
-    # Initial guess: average of anchor positions
-    initial_guess = np.mean(anchors, axis=0)
-
-    # Optimization
-    res = minimize(objective, initial_guess)
-
-    # Output
-    estimated_position = res.x
-    print("Estimated Coordinates of Sphere:", estimated_position)
 
 estimated_position = brute_force(anchors, distances)
 if sphere_actual:
