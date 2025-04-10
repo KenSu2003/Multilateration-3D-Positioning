@@ -1,3 +1,5 @@
+from scipy.optimize import minimize
+
 def brute_force(anchors, distances):
 
     # Objective function: minimize squared difference between measured and calculated distances

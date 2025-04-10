@@ -1,7 +1,4 @@
-import csv
-import numpy as np
-from scipy.optimize import minimize
-import multilat_lib.py
+import multilat_lib
 
 # Load anchor positions and distances
 anchors = []
@@ -20,10 +17,9 @@ with open("tag_data.csv", "r") as file:
 anchors = np.array(anchors)
 distances = np.array(distances)
 
-
-
 estimated_position = brute_force(anchors, distances)
-if sphere_actual:
-    error = np.linalg.norm(np.array(sphere_actual) - estimated_position)
-    print("Actual Coordinates of Sphere:", sphere_actual)
-    print("Estimation Error (Euclidean distance):", error)
+print(f"Estimated Position: {estimated_position}\n")
+# if sphere_actual:
+    # error = np.linalg.norm(np.array(sphere_actual) - estimated_position)
+    # print("Actual Coordinates of Sphere:", sphere_actual)
+    # print("Estimation Error (Euclidean distance):", error)
