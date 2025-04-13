@@ -3,6 +3,8 @@ import numpy as np
 from sympy import Point3D, Plane
 from multilat_lib import trilateration
 
+
+''' Simulate Using Belender Data '''
 # Read data from Blender
 data_file = "tag_data.csv"
 points = {}
@@ -28,21 +30,16 @@ HA = points["CubeA"]["distance"]
 HB = points["CubeB"]["distance"]
 HC = points["CubeC"]["distance"]
 
-anchors = np.array([A, B, C])
-distances = np.array([HA, HB, HC])
+anchors = np.array([A,B,C])
+distances = np.array([HA,HB,HC])
 
 # Run trilateration
-estimated_position = trilateration(anchors, distances, True)
+estimated_position = trilateration(anchors, distances)
 
-# Create base triangle plane to verify height
-A3D, B3D, C3D = Point3D(*A), Point3D(*B), Point3D(*C)
-base_plane = Plane(A3D, B3D, C3D)
-
-# Project sphere to plane and calculate vertical difference
-projected_z = base_plane.projection(Point3D(*sphere)).z
-vertical_error = sphere[2] - float(projected_z)
+# Project actual tag position to base plane
+error = sphere[2] - estimated_position[2]
 
 # Output
 print("Estimated Tag Position (from trilateration):", estimated_position)
-print("Actual Sphere Position:", sphere)
-print("Vertical Difference (Sphere Z - Projected Plane Z):", vertical_error)
+print("Actual Sphere Position (used in simulation):", sphere)
+print("Error (Tag Z - Plane Z):", error)

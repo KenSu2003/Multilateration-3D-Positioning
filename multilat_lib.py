@@ -1,7 +1,7 @@
 from scipy.optimize import minimize
 from sympy import Point3D, Plane, Matrix, sqrt as symbolic_sqrt
 import numpy as np
-
+import math
 
 
 def brute_force(anchors, distances):
@@ -90,41 +90,6 @@ def trilateration(anchors, distances, ignore=False):
     "A Precise 3D Positioning Approach Based on UWB with Reduced Base Stations" (Xu et al., 2021),
     which reduces the number of required base stations from four to three by projecting the tag height
     from a known triangle plane formed by the anchors.
-
-    Parameters:
-    -----------
-    anchors : np.ndarray of shape (3, 3)
-        The coordinates of the three base stations (anchors), where each anchor is a 3D point [x, y, z].
-        All three anchors must lie in the same horizontal plane (i.e., have approximately the same Z value).
-    
-    distances : np.ndarray of shape (3,)
-        The distances from each anchor to the target tag (HA, HB, HC), typically derived from TOF measurements.
-    
-    ignore : boolean
-        Ignores whether the anchors are on the same height.
-
-    Returns:
-    --------
-    estimated_position : np.ndarray of shape (3,)
-        The estimated 3D coordinates of the tag [x, y, z], calculated by projecting from the base triangle
-        using geometric volume and plane normal.
-
-    Raises:
-    -------
-    ValueError:
-        - If the shape of `anchors` or `distances` is incorrect.
-        - If the anchors are not coplanar in the XY plane (i.e., Z-coordinates are not approximately equal).
-
-    Notes:
-    ------
-    - Assumes a triangle base defined by three anchors lying flat on the same Z-plane.
-    - The method calculates the volume of the tetrahedron formed by the three anchors and the tag,
-      then uses that volume and the triangle area to determine the height of the tag above the plane.
-    - Accuracy significantly degrades if anchors are not level.
-
-    Reference:
-    ----------
-    Zhiqiang Xu et al., "A Precise 3D Positioning Approach Based on UWB with Reduced Base Stations", 2021.
     '''
 
     if anchors.shape != (3, 3):
@@ -182,3 +147,66 @@ def trilateration(anchors, distances, ignore=False):
     estimated_position = base_centroid + HT * normal_vec
 
     return estimated_position
+
+
+
+def local_to_geo(local_coords, origin_geo):
+    """
+    Converts local XYZ (meters) back to geodetic coordinates (lat, lon, alt).
+    
+    Parameters:
+    -----------
+    local_coords : np.ndarray of shape (3,)
+        The local ENU coordinates in meters.
+    origin_geo : tuple
+        The geodetic origin (lat0, lon0, alt0)
+
+    Returns:
+    --------
+    lat, lon, alt : float
+        Estimated geographic coordinates.
+    """
+    lat0, lon0, alt0 = origin_geo
+
+    # Latitude and longitude scales
+    lat_scale = 111_000
+    lon_scale = (40_075_000 / 360) * math.cos(math.radians(lat0))
+
+    dx, dy, dz = local_coords
+    lat = lat0 + (dy / lat_scale)
+    lon = lon0 + (dx / lon_scale)
+    alt = alt0 + dz
+
+    return lat, lon, alt
+
+
+# Convert lat/lon/alt to local XYZ
+def geo_to_local_xyz(anchor_coords):
+    """
+    Converts geodetic coordinates (lat, lon, alt) to local Cartesian (x, y, z) in meters.
+    Uses the first anchor as the local origin (0, 0, 0).
+    
+    Parameters:
+    -----------
+    anchor_coords : np.ndarray or list of tuples
+        Each row is (latitude, longitude, altitude)
+
+    Returns:
+    --------
+    local_coords : np.ndarray of shape (n, 3)
+        Local ENU (East, North, Up) coordinates in meters
+    """
+    lat0, lon0, alt0 = anchor_coords[0]
+
+    # Latitude and Longitude scale in meters per degree
+    lat_scale = 111_000  # approx constant
+    lon_scale = (40_075_000 / 360) * math.cos(math.radians(lat0))  # varies with latitude
+
+    local_coords = []
+    for lat, lon, alt in anchor_coords:
+        dx = (lon - lon0) * lon_scale
+        dy = (lat - lat0) * lat_scale
+        dz = alt - alt0
+        local_coords.append([dx, dy, dz])
+
+    return np.array(local_coords)
