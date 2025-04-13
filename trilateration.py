@@ -1,79 +1,48 @@
 import csv
-from sympy import Point, Matrix, sqrt, Point3D, Plane
-from math import sqrt as numeric_sqrt
+import numpy as np
+from sympy import Point3D, Plane
+from multilat_lib import trilateration
 
-O = Point(0, 0)
+# Read data from Blender
+data_file = "tag_data.csv"
+points = {}
 
-# ———————————————————————— Get Data from Blender ————————————————————————
+with open(data_file, "r") as file:
+    reader = csv.DictReader(file)
+    for row in reader:
+        label = row["Point"]
+        x, y, z = float(row["X"]), float(row["Y"]), float(row["Z"])
+        if label != "Sphere":
+            points[label] = {
+                "location": np.array([x, y, z]),
+                "distance": float(row["Distance to Sphere"])
+            }
+        else:
+            sphere = np.array([x, y, z])
 
-def trilateration():
+# Extract anchor locations and distances
+A = points["CubeA"]["location"]
+B = points["CubeB"]["location"]
+C = points["CubeC"]["location"]
+HA = points["CubeA"]["distance"]
+HB = points["CubeB"]["distance"]
+HC = points["CubeC"]["distance"]
 
-    # Read data from CSV
-    data_file = "tag_data.csv"
-    points = {}
+anchors = np.array([A, B, C])
+distances = np.array([HA, HB, HC])
 
-    with open(data_file, "r") as file:
-        reader = csv.DictReader(file)
-        for row in reader:
-            if row["Point"] != "Sphere":
-                points[row["Point"]] = {
-                    "location": Point(float(row["X"]), float(row["Y"]), float(row["Z"])),
-                    "distance": float(row["Distance to Sphere"])
-                }
-            else:
-                sphere = Point(float(row["X"]), float(row["Y"]), float(row["Z"]))
+# Run trilateration
+estimated_position = trilateration(anchors, distances)
 
-    # Set Data
-    A, B, C = points["CubeA"]["location"], points["CubeB"]["location"], points["CubeC"]["location"]
-    HA, HB, HC = points["CubeA"]["distance"], points["CubeB"]["distance"], points["CubeC"]["distance"]
+# Create base triangle plane to verify height
+A3D, B3D, C3D = Point3D(*A), Point3D(*B), Point3D(*C)
+base_plane = Plane(A3D, B3D, C3D)
 
-    # Define the three base station points as 3D points
-    A3D = Point3D(A.x, A.y, A.z)
-    B3D = Point3D(B.x, B.y, B.z)
-    C3D = Point3D(C.x, C.y, C.z)
+# Project sphere to plane and calculate vertical difference
+projected_z = base_plane.projection(Point3D(*sphere)).z
+vertical_error = sphere[2] - float(projected_z)
 
-    # Create a plane using the three base stations
-    base_plane = Plane(A3D, B3D, C3D)
-
-    # ———————————————————————— Height Calculation ————————————————————————
-
-    AB = A.distance(B)
-    AC = A.distance(C)
-    BC = B.distance(C)
-
-    p = (AB + AC + BC) / 2
-    S_ABC = sqrt(p * (p - AB) * (p - AC) * (p - BC))  # Area of the base triangle
-
-    a = HA
-    b = HB
-    c = HC
-    l = B.distance(C)
-    m = A.distance(C)
-    n = A.distance(B)
-
-    V_HABC_matrix = Matrix([
-        [a**2, (a**2 + b**2 - n**2) / 2, (a**2 + c**2 - m**2) / 2],
-        [(a**2 + b**2 - n**2) / 2, b**2, (b**2 + c**2 - l**2) / 2],
-        [(a**2 + c**2 - m**2) / 2, (b**2 + c**2 - l**2) / 2, c**2]
-    ])
-
-    V_HABC_squared = V_HABC_matrix.det() / 36
-
-
-    V_HABC = numeric_sqrt(abs(float(V_HABC_squared)))
-
-    # Calculate HT
-    HT = 3 * (V_HABC / float(S_ABC))
-
-    return p, S_ABC, V_HABC, HT
-
-p, S_ABC, V_HABC, HT = trilateration()
-
-# Print the results
-print("Semi-perimeter of triangle (p):", p)
-print("Area of triangle (S_ABC):", float(S_ABC))
-print("Volume of tetrahedron (V_HABC):", V_HABC)
-print("Height (HT):", HT)
-
-# ———————————————————————— Check Height ————————————————————————
-print(f"Check = {sphere.z - HT}")
+# Output
+print("Estimated Tag Position (from trilateration):", estimated_position)
+print("Actual Sphere Position:", sphere)
+print("Vertical Difference (Sphere Z - Projected Plane Z):", vertical_error)

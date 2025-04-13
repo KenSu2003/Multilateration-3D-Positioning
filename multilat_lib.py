@@ -1,7 +1,13 @@
 from scipy.optimize import minimize
+from sympy import Point3D, Plane, Matrix, sqrt as symbolic_sqrt
 import numpy as np
 
+
+
 def brute_force(anchors, distances):
+    '''
+    Literally just finding the best fit. 
+    '''
 
     # Objective function: minimize squared difference between measured and calculated distances
     def objective(q):
@@ -75,3 +81,104 @@ def multilateration_closed_form(anchors, distances):
     estimated_shifted = np.linalg.solve(A, b)
     estimated = estimated_shifted + origin
     return estimated
+
+def trilateration(anchors, distances, ignore=False):
+    '''
+    Estimate the 3D position of a tag using geometric trilateration with exactly 3 UWB anchors.
+
+    This implementation is based on the algorithm proposed in the paper
+    "A Precise 3D Positioning Approach Based on UWB with Reduced Base Stations" (Xu et al., 2021),
+    which reduces the number of required base stations from four to three by projecting the tag height
+    from a known triangle plane formed by the anchors.
+
+    Parameters:
+    -----------
+    anchors : np.ndarray of shape (3, 3)
+        The coordinates of the three base stations (anchors), where each anchor is a 3D point [x, y, z].
+        All three anchors must lie in the same horizontal plane (i.e., have approximately the same Z value).
+    
+    distances : np.ndarray of shape (3,)
+        The distances from each anchor to the target tag (HA, HB, HC), typically derived from TOF measurements.
+    
+    ignore : boolean
+        Ignores whether the anchors are on the same height.
+
+    Returns:
+    --------
+    estimated_position : np.ndarray of shape (3,)
+        The estimated 3D coordinates of the tag [x, y, z], calculated by projecting from the base triangle
+        using geometric volume and plane normal.
+
+    Raises:
+    -------
+    ValueError:
+        - If the shape of `anchors` or `distances` is incorrect.
+        - If the anchors are not coplanar in the XY plane (i.e., Z-coordinates are not approximately equal).
+
+    Notes:
+    ------
+    - Assumes a triangle base defined by three anchors lying flat on the same Z-plane.
+    - The method calculates the volume of the tetrahedron formed by the three anchors and the tag,
+      then uses that volume and the triangle area to determine the height of the tag above the plane.
+    - Accuracy significantly degrades if anchors are not level.
+
+    Reference:
+    ----------
+    Zhiqiang Xu et al., "A Precise 3D Positioning Approach Based on UWB with Reduced Base Stations", 2021.
+    '''
+
+    if anchors.shape != (3, 3):
+        raise ValueError("This solver needs exactly 3 anchors in 3D (shape must be [3, 3])")
+    if distances.shape != (3,):
+        raise ValueError("This solver needs exactly 3 distances (shape must be [3,])")
+
+    # Enforce anchor height uniformity
+    z_coords = anchors[:, 2]
+    if not ignore and not np.allclose(z_coords, z_coords[0], atol=1e-3):
+        raise ValueError("Anchors must be on the same horizontal plane (same Z coordinate).")
+
+    # Unpack anchors and distances
+    A, B, C = anchors
+    HA, HB, HC = distances
+
+    # Convert anchor points to sympy Point3D
+    A3D, B3D, C3D = Point3D(*A), Point3D(*B), Point3D(*C)
+
+    # Define the triangle plane
+    base_plane = Plane(A3D, B3D, C3D)
+
+    # Triangle side lengths
+    AB = A3D.distance(B3D)
+    AC = A3D.distance(C3D)
+    BC = B3D.distance(C3D)
+
+    # Semi-perimeter and area
+    p = (AB + AC + BC) / 2
+    S_ABC = symbolic_sqrt(p * (p - AB) * (p - AC) * (p - BC))
+
+    # Convert sympy distances to float
+    n = float(AB)
+    m = float(AC)
+    l = float(BC)
+
+    # Cayley-Menger determinant-based volume
+    V_HABC_matrix = Matrix([
+        [HA**2, (HA**2 + HB**2 - n**2) / 2, (HA**2 + HC**2 - m**2) / 2],
+        [(HA**2 + HB**2 - n**2) / 2, HB**2, (HB**2 + HC**2 - l**2) / 2],
+        [(HA**2 + HC**2 - m**2) / 2, (HB**2 + HC**2 - l**2) / 2, HC**2]
+    ])
+    
+    V_HABC_squared = V_HABC_matrix.det() / 36
+    V_HABC = np.sqrt(abs(float(V_HABC_squared)))
+
+    # Height from tag to triangle
+    HT = 3 * V_HABC / float(S_ABC)
+
+    # Estimate tag position: centroid + height * normal_vector
+    base_centroid = np.mean(anchors, axis=0)
+    normal_vec = np.array(base_plane.normal_vector).astype(np.float64)
+    normal_vec /= np.linalg.norm(normal_vec)
+
+    estimated_position = base_centroid + HT * normal_vec
+
+    return estimated_position
