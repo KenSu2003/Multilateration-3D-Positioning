@@ -128,9 +128,9 @@ def trilateration(anchors, distances, ignore=False):
     '''
 
     if anchors.shape != (3, 3):
-        raise ValueError("This solver needs exactly 3 anchors in 3D (shape must be [3, 3])")
+        raise ValueError(f"This solver needs exactly 3 anchors in 3D (shape must be [3, 3]).\n There are exactly {len(anchors)} anchors")
     if distances.shape != (3,):
-        raise ValueError("This solver needs exactly 3 distances (shape must be [3,])")
+        raise ValueError(f"This solver needs exactly 3 distances (shape must be [3,]).\n There are exactly {len(distances)} distances.")
 
     # Enforce anchor height uniformity
     z_coords = anchors[:, 2]
