@@ -32,7 +32,7 @@ anchors = np.array([A, B, C])
 distances = np.array([HA, HB, HC])
 
 # Run trilateration
-estimated_position = trilateration(anchors, distances)
+estimated_position = trilateration(anchors, distances, True)
 
 # Create base triangle plane to verify height
 A3D, B3D, C3D = Point3D(*A), Point3D(*B), Point3D(*C)
