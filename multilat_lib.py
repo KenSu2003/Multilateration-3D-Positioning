@@ -186,7 +186,7 @@ def local_to_geo(local_coords, origin_geo):
 
 
 # Convert lat/lon/alt to local XYZ
-def geo_to_local_xyz(anchor_coords):
+def geo_to_local_xyz(anchor_coords, origin_geo=None):
     """
     Converts geodetic coordinates (lat, lon, alt) to local Cartesian (x, y, z) in meters.
     Uses the first anchor as the local origin (0, 0, 0).
@@ -201,7 +201,10 @@ def geo_to_local_xyz(anchor_coords):
     local_coords : np.ndarray of shape (n, 3)
         Local ENU (East, North, Up) coordinates in meters
     """
-    lat0, lon0, alt0 = anchor_coords[0]
+    if origin_geo is not None:
+        lat0, lon0, alt0 = origin_geo
+    else:
+        lat0, lon0, alt0 = anchor_coords[0]
 
     # Latitude and Longitude scale in meters per degree
     lat_scale = 111_000  # approx constant
