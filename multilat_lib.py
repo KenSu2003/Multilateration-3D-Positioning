@@ -4,27 +4,32 @@ import numpy as np
 import math
 
 
-def brute_force(anchors, distances):
+
+def brute_force(anchor_coords=None, x=None, y=None, distances=None):
     '''
-    Literally just finding the best fit. 
+    Hybrid brute force:
+    - Full 3D: estimate [x, y, z] when x and y are None
+    - Z-only: estimate z when x and y are provided
     '''
 
-    # Objective function: minimize squared difference between measured and calculated distances
-    def objective(q):
-        return np.sum((np.linalg.norm(anchors - q, axis=1) - distances) ** 2)
+    if x is None and y is None:
+        # Full 3D optimization
+        def objective(q):
+            return np.sum((np.linalg.norm(anchor_coords - q, axis=1) - distances) ** 2)
 
-    # Initial guess: average of anchor positions
-    initial_guess = np.mean(anchors, axis=0)
+        initial_guess = np.mean(anchor_coords, axis=0)
+        res = minimize(objective, initial_guess)
+        return res.x  # full [x, y, z]
 
-    # Optimization
-    res = minimize(objective, initial_guess)
+    else:
+        # Estimate Z only, given fixed x and y
+        def objective_z(z, anchor_coords, distances):
+            q = np.array([x, y, z[0]])
+            return np.sum((np.linalg.norm(anchor_coords - q, axis=1) - distances) ** 2)
 
-    # Output
-    estimated_position = res.x
-    print("Estimated Coordinates of Sphere:", estimated_position)
-
-    return estimated_position
-
+        res = minimize(objective_z, [0.0], args=(anchor_coords, distances))
+        return res.x[0]
+        
 
 def multilateration_minimum_squared(anchors, distances):
     '''

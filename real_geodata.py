@@ -1,31 +1,84 @@
-import multilat_lib
 import numpy as np
+from multilat_lib import geo_to_local_xyz, local_to_geo
 from multilat_lib import *
 
-# Real-world anchor GPS data
+# Anchor class + 2D trilateration as before
+class Anchor:
+    def __init__(self, id, x, y):
+        self.id = id
+        self.x_coord = x
+        self.y_coord = y
+
+def trilaterate(anchors, distances):
+    x1, x2, x3 = anchors[0].x_coord, anchors[1].x_coord, anchors[2].x_coord
+    y1, y2, y3 = anchors[0].y_coord, anchors[1].y_coord, anchors[2].y_coord
+    r1, r2, r3 = distances
+
+    A = -2*x1 + 2*x2
+    B = -2*y1 + 2*y2
+    C = r1**2 - r2**2 - x1**2 + x2**2 - y1**2 + y2**2
+    D = -2*x2 + 2*x3
+    E = -2*y2 + 2*y3
+    F = r2**2 - r3**2 - x2**2 + x3**2 - y2**2 + y3**2
+
+    X = (C*E - F*B) / (E*A - B*D)
+    Y = (C*D - A*F) / (B*D - A*E)
+    return (X, Y)
+
+
+def error_analysis(estimated,actual):
+    return (estimated-actual)/actual
+
+# --- Input Coordinates ---
 anchors_geo = [
-    (42.39379, -72.52856, 71.13),
-    (42.39381, -72.52861, 71.12),
-    (42.39383, -72.52862, 71.09)
+    (42.39379523, -72.528563242, 71.13234),
+    (42.393814234, -72.52861123, 71.12234),
+    (42.39383123, -72.52862432, 71.01239)
 ]
+tag_geo_true = (42.39323815, -72.52858325, 71.143205)
+origin_geo = min(anchors_geo, key=lambda x: (x[0], x[1]))
 
-tag_geo = (42.39382, -72.52859, 71.11)
+# Convert to local coordinates
+anchor_coords = geo_to_local_xyz(anchors_geo)
+tag_local = geo_to_local_xyz([tag_geo_true])[0]
+anchor_list = [Anchor(i, x, y) for i, (x, y, z) in enumerate(anchor_coords)]
 
-distances = np.array([4.15, 1.99, 2.71])  # in meters
-anchors = geo_to_local_xyz(anchors_geo)
+# Simulate distances
+def simulate_distances_3d(anchor_coords, tag, noise_std=0.05):
+    dists = np.linalg.norm(anchor_coords - tag, axis=1)
+    return dists + np.random.normal(0, noise_std, size=dists.shape)
 
-estimated_position = brute_force(anchors, distances)
+# distances = simulate_distances_3d(anchor_coords, tag_local)
+distances = simulate_distances_3d(anchor_coords, tag_local, noise_std=0.0)
 
-lat_est, lon_est, alt_est = local_to_geo(estimated_position, anchors_geo[0])
+# 1. Estimate XY using 2D trilateration
+estimated_x, estimated_y = trilaterate(anchor_list, distances)
 
-# Project actual tag position to base plane
-vertical_error = tag_geo[2] - alt_est
+# 2. Estimate Z using your hybrid brute_force function
+estimated_z = brute_force(anchor_coords=anchor_coords, x=estimated_x, y=estimated_y, distances=distances)
+# estimated_z = brute_force(anchor_coords=anchor_coords, distances=distances)[2]
+
+# Combine into full 3D estimate
+estimated_local = np.array([estimated_x, estimated_y, estimated_z])
+lat_est, lon_est, alt_est = local_to_geo(estimated_local, origin_geo)
 
 # Output
-print(f"\nEstimated Geo Coordinates:\nLatitude: {lat_est}\nLongitude: {lon_est}\nAltitude: {alt_est}")
-print("Actual Tag Position:", tag_geo)
-print("Vertical Error (Tag Z - Plane Z):", vertical_error)
+print("\n=== Hybrid Trilateration (XY: 2D + Z: Brute Force) ===")
+print(f"Estimated Local: x={estimated_x:} m, y={estimated_y:} m, z={estimated_z:} m")
+
+print("\nEstimated Tag GPS:")
+print(f"Latitude:  {lat_est}")
+print(f"Longitude: {lon_est}")
+print(f"Altitude:  {alt_est} m")
 
 
+lat_actual, long_actual, alt_actual = tag_geo_true
+print("\nActual Tag GPS:")
+print(f"Latitude:  {tag_geo_true[0]}")
+print(f"Longitude: {tag_geo_true[1]}")
+print(f"Altitude:  {tag_geo_true[2]} m")
 
-
+print("\nError Analysis")
+print("Latitude Error:", f"{abs(error_analysis(lat_est,lat_actual))} %")
+print("Longitude Error:", f"{abs(error_analysis(lon_est,long_actual))} %")
+print("Altitude Error:", f"{abs(error_analysis(alt_est,alt_actual))} m")

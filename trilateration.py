@@ -4,7 +4,7 @@ from sympy import Point3D, Plane
 from multilat_lib import trilateration
 
 
-''' Simulate Using Belender Data '''
+''' Simulate Using Blender Data '''
 # Read data from Blender
 data_file = "tag_data.csv"
 points = {}
