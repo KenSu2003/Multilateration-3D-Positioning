@@ -75,16 +75,12 @@ print(f"Altitude:  {alt_est} m")
 
 lat_actual, long_actual, alt_actual = tag_geo_true
 print("\nActual Tag GPS:")
-print(f"Latitude:  {tag_geo_true[0]}")
-print(f"Longitude: {tag_geo_true[1]}")
-print(f"Altitude:  {tag_geo_true[2]} m")
+print(f"Latitude:  {lat_actual}")
+print(f"Longitude: {long_actual}")
+print(f"Altitude:  {alt_actual} m")
 
 
 print("\n=== Error Analysis ===")
-
-print("\nLocal XYZ Comparison")
-print(f"Estimated Local: x={estimated_local[0]:.3f}, y={estimated_local[1]:.3f}, z={estimated_local[2]:.3f}")
-print(f"Actual Local:    x={tag_local[0]:.3f}, y={tag_local[1]:.3f}, z={tag_local[2]:.3f}")
 
 print("\nError in Local Coordinates (Estimated - Actual):")
 print(f"Δx = {estimated_local[0] - tag_local[0]:.3f} m")
